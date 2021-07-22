@@ -1,6 +1,8 @@
+from django.http.response import HttpResponse
+from django.views.generic import FormView, DetailView
 from django.shortcuts import redirect, render
-from .models import Place
-from .forms import PlaceForm
+from .models import Place, FeedBack
+from .forms import PlaceForm, FeedBackForm
 
 def places(request):
     place_objects = Place.objects.all()
@@ -18,9 +20,13 @@ def create_place(request):
 
 
 def place(request, id):
-    place_object = Place.objects.get(id=id)
-    return render(request, 'places/place.html',{'place_object': place_object})
+    try:
+        place_object = Place.objects.get(id=id)
+        return render(request, 'places/place.html',{'place_object': place_object})
+    except Place.DoesNotExist as e:
+        return HttpResponse(f'Not found: {e}', status=404)
 
+    
 def edit_place(request, id):
     place_object = Place.objects.get(id=id)
     
@@ -37,3 +43,17 @@ def delete_place(request, id):
     place_object = Place.objects.get(id=id)
     place_object.delete()
     return redirect(places)
+
+class FeedBackView(FormView):
+    template_name='places/feedback_form.html'
+    form_class=FeedBackForm
+    success_url='/places/'
+
+    def form_valid(self, form):
+        form.save()
+        return super().form_valid(form)
+
+
+class FeedBackDatailView(DetailView):
+    queryset = FeedBack.objects.all()
+    template_name='places/feedback.html'
